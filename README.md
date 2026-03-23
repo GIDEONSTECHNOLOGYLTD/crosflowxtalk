@@ -64,7 +64,7 @@ A comprehensive cross-chain DeFi ecosystem built on LayerOneX, leveraging X-Talk
 - **L1X Wallet SDK** - Blockchain interaction
 - **L1X CLI** - Contract deployment
 - **Node.js** - API server
-- **PostgreSQL** - Database
+- **MongoDB** - Database
 - **Redis** - Caching
 
 ## 📦 Project Structure
@@ -95,7 +95,7 @@ crossflow-protocol/
 - Node.js 18+
 - Rust 1.70+
 - L1X CLI
-- PostgreSQL 14+
+- MongoDB 6.0+
 
 ### Installation
 
