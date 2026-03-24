@@ -9,6 +9,9 @@ import userRoutes from './routes/user';
 import analyticsRoutes from './routes/analytics';
 import yieldRoutes from './routes/yield';
 import stakingRoutes from './routes/staking';
+import authRoutes from './routes/auth';
+import { generalLimiter } from './middleware/rateLimiter';
+import { requestLogger } from './middleware/logger';
 
 dotenv.config();
 
@@ -20,8 +23,10 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true,
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(requestLogger);
+app.use('/api/', generalLimiter);
 
 app.get('/health', (req: Request, res: Response) => {
   res.json({ 
@@ -31,6 +36,7 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
+app.use('/api/auth', authRoutes);
 app.use('/api/banking', bankingRoutes);
 app.use('/api/swap', swapRoutes);
 app.use('/api/user', userRoutes);

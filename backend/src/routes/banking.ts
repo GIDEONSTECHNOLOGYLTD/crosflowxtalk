@@ -4,10 +4,12 @@ import Transaction from '../models/Transaction';
 import Loan from '../models/Loan';
 import User from '../models/User';
 import { transformAccount, transformTransaction, transformLoan } from '../utils/transformers';
+import { validateDeposit, validateWithdraw, validateTransfer, validateLoanApplication, validateWalletParam, handleValidationErrors } from '../middleware/validation';
+import { transactionLimiter } from '../middleware/rateLimiter';
 
 const router: Router = express.Router();
 
-router.get('/accounts/:walletAddress', async (req: Request, res: Response) => {
+router.get('/accounts/:walletAddress', [validateWalletParam(), handleValidationErrors], async (req: Request, res: Response) => {
   try {
     const { walletAddress } = req.params;
     const accounts = await BankAccount.find({ 
@@ -51,7 +53,7 @@ router.post('/accounts', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/deposit', async (req: Request, res: Response) => {
+router.post('/deposit', [transactionLimiter, ...validateDeposit], async (req: Request, res: Response) => {
   try {
     const { walletAddress, accountId, amount, method } = req.body;
     const account = await BankAccount.findById(accountId);
@@ -78,7 +80,7 @@ router.post('/deposit', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/withdraw', async (req: Request, res: Response) => {
+router.post('/withdraw', [transactionLimiter, ...validateWithdraw], async (req: Request, res: Response) => {
   try {
     const { walletAddress, accountId, amount, method } = req.body;
     const account = await BankAccount.findById(accountId);
@@ -106,7 +108,7 @@ router.post('/withdraw', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/transfer', async (req: Request, res: Response) => {
+router.post('/transfer', [transactionLimiter, ...validateTransfer], async (req: Request, res: Response) => {
   try {
     const { walletAddress, fromAccountId, toAddress, amount } = req.body;
     const account = await BankAccount.findById(fromAccountId);
@@ -135,7 +137,7 @@ router.post('/transfer', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/loans/apply', async (req: Request, res: Response) => {
+router.post('/loans/apply', validateLoanApplication, async (req: Request, res: Response) => {
   try {
     const { walletAddress, loanType, amount, term } = req.body;
     const user = await User.findOne({ walletAddress: walletAddress.toLowerCase() });
