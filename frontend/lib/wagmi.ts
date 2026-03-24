@@ -1,21 +1,11 @@
 import { http, createConfig } from 'wagmi'
 import { mainnet, bsc, polygon, arbitrum, optimism } from 'wagmi/chains'
-import { injected, walletConnect } from 'wagmi/connectors'
+import { injected } from 'wagmi/connectors'
 
 export const config = createConfig({
   chains: [mainnet, bsc, polygon, arbitrum, optimism],
   connectors: [
-    injected(), // MetaMask, Coinbase Wallet, etc.
-    walletConnect({ 
-      projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'demo',
-      metadata: {
-        name: 'CrossFlow Protocol',
-        description: 'Cross-Chain DeFi Ecosystem on LayerOneX',
-        url: 'https://crossflow.protocol',
-        icons: ['https://crossflow.protocol/icon.png']
-      },
-      showQrModal: true,
-    }),
+    injected(), // MetaMask, Coinbase Wallet, Brave Wallet, etc.
   ],
   transports: {
     [mainnet.id]: http(),
