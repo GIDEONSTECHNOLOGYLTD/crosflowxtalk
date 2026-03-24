@@ -1,6 +1,7 @@
 import express, { Router, Request, Response } from 'express';
 import Transaction from '../models/Transaction';
 import User from '../models/User';
+import { transformTransaction } from '../utils/transformers';
 
 const router: Router = express.Router();
 
@@ -58,9 +59,27 @@ router.post('/execute', async (req: Request, res: Response) => {
       await user.save();
     }
 
-    res.json({ success: true, transaction });
+    res.json({ success: true, transaction: transformTransaction(transaction) });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Swap execution failed' });
+  }
+});
+
+router.get('/history/:walletAddress', async (req: Request, res: Response) => {
+  try {
+    const { walletAddress } = req.params;
+    const limit = parseInt(req.query.limit as string) || 50;
+
+    const swaps = await Transaction.find({
+      walletAddress: walletAddress.toLowerCase(),
+      type: 'Swap',
+    })
+      .sort({ createdAt: -1 })
+      .limit(limit);
+
+    res.json({ success: true, swaps: swaps.map(transformTransaction) });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch swap history' });
   }
 });
 

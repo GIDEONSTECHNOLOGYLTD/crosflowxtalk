@@ -3,6 +3,7 @@ import BankAccount from '../models/BankAccount';
 import Transaction from '../models/Transaction';
 import Loan from '../models/Loan';
 import User from '../models/User';
+import { transformAccount, transformTransaction, transformLoan } from '../utils/transformers';
 
 const router: Router = express.Router();
 
@@ -13,7 +14,7 @@ router.get('/accounts/:walletAddress', async (req: Request, res: Response) => {
       walletAddress: walletAddress.toLowerCase(),
       status: 'active',
     });
-    res.json({ success: true, accounts });
+    res.json({ success: true, accounts: accounts.map(transformAccount) });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to fetch accounts' });
   }
@@ -44,7 +45,7 @@ router.post('/accounts', async (req: Request, res: Response) => {
       currency: 'USD',
     });
 
-    res.json({ success: true, account });
+    res.json({ success: true, account: transformAccount(account) });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to create account' });
   }
@@ -71,7 +72,7 @@ router.post('/deposit', async (req: Request, res: Response) => {
       description: `${method} deposit`,
     });
 
-    res.json({ success: true, account, transaction });
+    res.json({ success: true, account: transformAccount(account), transaction: transformTransaction(transaction) });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Deposit failed' });
   }
@@ -99,9 +100,38 @@ router.post('/withdraw', async (req: Request, res: Response) => {
       description: `${method} withdrawal`,
     });
 
-    res.json({ success: true, account, transaction });
+    res.json({ success: true, account: transformAccount(account), transaction: transformTransaction(transaction) });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Withdrawal failed' });
+  }
+});
+
+router.post('/transfer', async (req: Request, res: Response) => {
+  try {
+    const { walletAddress, fromAccountId, toAddress, amount } = req.body;
+    const account = await BankAccount.findById(fromAccountId);
+    if (!account) return res.status(404).json({ success: false, error: 'Account not found' });
+    if (account.balance < amount) return res.status(400).json({ success: false, error: 'Insufficient balance' });
+
+    account.balance -= amount;
+    await account.save();
+
+    const user = await User.findOne({ walletAddress: walletAddress.toLowerCase() });
+    const transaction = await Transaction.create({
+      userId: user?._id,
+      walletAddress: walletAddress.toLowerCase(),
+      type: 'Transfer',
+      fromAccount: fromAccountId,
+      amount,
+      fee: 0,
+      status: 'Completed',
+      description: `Transfer to ${toAddress.slice(0, 20)}...`,
+      metadata: { recipient: toAddress },
+    });
+
+    res.json({ success: true, transaction: transformTransaction(transaction) });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Transfer failed' });
   }
 });
 
@@ -130,7 +160,7 @@ router.post('/loans/apply', async (req: Request, res: Response) => {
       status: user.creditScore >= 600 ? 'Approved' : 'Rejected',
     });
 
-    res.json({ success: true, loan });
+    res.json({ success: true, loan: transformLoan(loan) });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Loan application failed' });
   }

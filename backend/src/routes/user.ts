@@ -2,6 +2,7 @@ import express, { Router, Request, Response } from 'express';
 import User from '../models/User';
 import BankAccount from '../models/BankAccount';
 import Transaction from '../models/Transaction';
+import { transformUser, transformAccount, transformTransaction } from '../utils/transformers';
 
 const router: Router = express.Router();
 
@@ -17,7 +18,7 @@ router.get('/:walletAddress', async (req: Request, res: Response) => {
       });
     }
 
-    res.json({ success: true, user });
+    res.json({ success: true, user: transformUser(user) });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to fetch user' });
   }
@@ -31,7 +32,10 @@ router.get('/:walletAddress/portfolio', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      portfolio: { accounts, totalBalance },
+      portfolio: { 
+        accounts: accounts.map(transformAccount), 
+        totalBalance 
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to fetch portfolio' });
@@ -49,7 +53,7 @@ router.get('/:walletAddress/transactions', async (req: Request, res: Response) =
       .sort({ createdAt: -1 })
       .limit(limit);
 
-    res.json({ success: true, transactions });
+    res.json({ success: true, transactions: transactions.map(transformTransaction) });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to fetch transactions' });
   }
