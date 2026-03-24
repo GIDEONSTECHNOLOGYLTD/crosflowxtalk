@@ -1,4 +1,5 @@
-// Complete Banking Service with all operations
+// Complete Banking Service with MongoDB backend integration
+import { bankingApi } from './api';
 
 export interface BankAccount {
   id: string;
@@ -147,12 +148,27 @@ class BankingService {
   }
 
   // Deposit
-  async deposit(accountId: string, amount: number, method: "crypto" | "bank"): Promise<Transaction> {
+  async deposit(accountId: string, amount: number, method: 'crypto' | 'bank', walletAddress?: string): Promise<Transaction> {
+    try {
+      if (walletAddress) {
+        const result = await bankingApi.deposit(walletAddress, accountId, amount, method);
+        this.loadFromStorage();
+        return {
+          id: result.transaction.id,
+          type: "Deposit",
+          amount: result.transaction.amount,
+          date: new Date(result.transaction.createdAt),
+          status: result.transaction.status as any,
+          description: result.transaction.description,
+          toAccount: accountId,
+        };
+      }
+    } catch (error) {
+      console.warn('Backend API failed, using localStorage fallback', error);
+    }
+
     const account = this.getAccount(accountId);
     if (!account) throw new Error("Account not found");
-
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
 
     account.balance += amount;
 

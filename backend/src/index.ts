@@ -7,6 +7,8 @@ import bankingRoutes from './routes/banking';
 import swapRoutes from './routes/swap';
 import userRoutes from './routes/user';
 import analyticsRoutes from './routes/analytics';
+import yieldRoutes from './routes/yield';
+import stakingRoutes from './routes/staking';
 
 dotenv.config();
 
@@ -33,6 +35,8 @@ app.use('/api/banking', bankingRoutes);
 app.use('/api/swap', swapRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/yield', yieldRoutes);
+app.use('/api/staking', stakingRoutes);
 
 app.use((err: any, req: Request, res: Response, next: any) => {
   console.error(err.stack);
