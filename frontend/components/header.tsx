@@ -3,10 +3,25 @@
 import { Button } from "@/components/ui/button";
 import { Wallet, Menu } from "lucide-react";
 import Link from "next/link";
-import { useWallet } from "@/lib/wallet-context";
+import { useState } from "react";
 
 export function Header() {
-  const { address, isConnected, isConnecting, connect, disconnect } = useWallet();
+  const [isConnected, setIsConnected] = useState(false);
+  const [address, setAddress] = useState("");
+
+  const handleConnect = () => {
+    // Simplified wallet connection
+    if (typeof window !== 'undefined' && (window as any).ethereum) {
+      (window as any).ethereum.request({ method: 'eth_requestAccounts' })
+        .then((accounts: string[]) => {
+          setAddress(accounts[0]);
+          setIsConnected(true);
+        })
+        .catch((err: any) => console.error('Wallet connection failed:', err));
+    } else {
+      alert('Please install MetaMask!');
+    }
+  };
 
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -51,7 +66,7 @@ export function Header() {
                 variant="outline" 
                 size="sm" 
                 className="hidden md:flex"
-                onClick={() => disconnect()}
+                onClick={() => { setIsConnected(false); setAddress(""); }}
               >
                 <Wallet className="mr-2 h-4 w-4" />
                 {formatAddress(address)}
@@ -61,11 +76,10 @@ export function Header() {
                 variant="outline" 
                 size="sm" 
                 className="hidden md:flex"
-                onClick={() => connect()}
-                disabled={isConnecting}
+                onClick={handleConnect}
               >
                 <Wallet className="mr-2 h-4 w-4" />
-                {isConnecting ? "Connecting..." : "Connect Wallet"}
+                Connect Wallet
               </Button>
             )}
             <Button variant="ghost" size="sm" className="md:hidden">
