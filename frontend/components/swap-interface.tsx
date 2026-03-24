@@ -5,7 +5,6 @@ import { swapService, SwapQuote } from "@/lib/swap-service";
 import { validateAmount, formatCurrency } from "@/lib/validation";
 import { TransactionModal } from "@/components/transaction-modal";
 import { useToast } from "@/hooks/use-toast";
-import { useWallet } from "@/lib/wallet-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +32,15 @@ export function SwapInterface() {
   const [modalOpen, setModalOpen] = useState(false);
   const [error, setError] = useState("");
   const { toast } = useToast();
-  const { isConnected } = useWallet();
+  const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).ethereum) {
+      (window as any).ethereum.request({ method: 'eth_accounts' })
+        .then((accounts: string[]) => setIsConnected(accounts.length > 0))
+        .catch(() => setIsConnected(false));
+    }
+  }, []);
 
   useEffect(() => {
     if (fromAmount && parseFloat(fromAmount) > 0) {
